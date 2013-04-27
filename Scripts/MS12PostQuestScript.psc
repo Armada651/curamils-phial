@@ -49,8 +49,11 @@ Function SetReward(string rewardType)
 	player.AddItem(rep)
 	
 	; set the refill timer
-	RegisterForSingleUpdateGameTime((PhialAlias as MS12WhitePhialScript).RefillTime)
+    MS12WhitePhialScript phial = (PhialAlias as MS12WhitePhialScript)
+	RegisterForSingleUpdateGameTime(phial.RefillTime)
 	MS12AlignedMessage.Show()
+    
+    phial.GoToState("Empty")
 EndFunction
 
 Event OnUpdateGameTime()

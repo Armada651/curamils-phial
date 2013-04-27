@@ -2,27 +2,27 @@ Scriptname MS12WhitePhialScript extends ReferenceAlias
 
 float Property RefillTime auto ; in hours
 
-Potion Property CustomPhial auto
 MiscObject Property EmptyPhial auto
 ObjectReference Property CurrentContainer auto
 ObjectReference Property SpawnMarker auto
+MiscObject Property WhitePhialBaseObject auto
 
 Potion Property Alignment auto
 
 ; track where we are
 Event OnContainerChanged(ObjectReference akNewContainer, ObjectReference akOldContainer)
-; 	Debug.Trace("MS12: White phial changing hands; now in " + akNewContainer)
+	Debug.Trace("MS12: White phial changing hands; now in " + akNewContainer)
 	CurrentContainer = akNewContainer
 EndEvent
 
 Function Refill(Potion fillItem)
-; 	Debug.Trace("MS12: Refilling white phial...")
+ 	Debug.Trace("MS12: Refilling white phial...")
 	ObjectReference emptyMe = GetReference()
 	Clear()
 	
 	if (CurrentContainer == None)
 		; in the world somewhere
-; 		Debug.Trace("MS12: White Phial sitting somewhere in the world: " + GetReference().GetParentCell())
+ 		Debug.Trace("MS12: White Phial sitting somewhere in the world: " + GetReference().GetParentCell())
 
 		ObjectReference newMe = SpawnMarker.PlaceAtMe(fillItem)
 
@@ -51,7 +51,7 @@ Function Refill(Potion fillItem)
 		; newMe.SetMotionType(newMe.Motion_Dynamic)
 	else
 		; in a container
-; 		Debug.Trace("MS12: White Phial in a container: " + CurrentContainer)
+ 		Debug.Trace("MS12: White Phial in a container: " + CurrentContainer)
 		ObjectReference newMe = CurrentContainer.PlaceAtMe(fillItem)
 		ForceRefTo(newMe)
 		CurrentContainer.AddItem(newMe, 1, true)
@@ -60,29 +60,34 @@ Function Refill(Potion fillItem)
 		; remove all empty phials, it may have been duplicated
 		CurrentContainer.RemoveItem(EmptyPhial, CurrentContainer.GetItemCount(EmptyPhial), true)
 	endif
+    
+    GoToState("")
 EndFunction
 
-Event OnEquipped(Actor akActor)
-; 	Debug.Trace("MS12: Player drinking white phial.")
-	ObjectReference me = GetReference()
-	
-	; check if phial is empty
-	if (me.GetBaseObject() == EmptyPhial)
-		(GetOwningQuest() as MS12PostQuestScript).Realign()
-	else
-		; if the phial has a custom alignment
-		if (me.GetBaseObject() == CustomPhial)
-			Game.IncrementStat("Potions Used", -1)
-			int count = akActor.GetItemCount(Alignment)
-			akActor.EquipItem(Alignment, false, true)
-			int delta = count - akActor.GetItemCount(Alignment)
-			akActor.AddItem(Alignment, delta, true)
-		endif
-		
-		; add the empty phial and set the refill timer
-		ObjectReference empty = akActor.PlaceAtMe(EmptyPhial, 1)
-		ForceRefTo(empty)
-		akActor.AddItem(empty, 1, true)
-		GetOwningQuest().RegisterForSingleUpdateGameTime(RefillTime)
-	endif
-EndEvent
+; part of fix for 71753
+Function SetForRefill(Actor drinker)
+    ; if the phial has a custom alignment
+    if (Alignment != none)
+        Game.IncrementStat("Potions Used", -1)
+        int count = drinker.GetItemCount(Alignment)
+        drinker.EquipItem(Alignment, false, true)
+        int delta = count - drinker.GetItemCount(Alignment)
+        drinker.AddItem(Alignment, delta, true)
+    endif
+    
+    ; add the empty phial and set the refill timer
+	ObjectReference empty = drinker.PlaceAtMe(EmptyPhial, 1)
+	ForceRefTo(empty)
+	drinker.AddItem(empty, 1, true)
+	GetOwningQuest().RegisterForSingleUpdateGameTime(RefillTime)
+    
+    GoToState("Empty")
+EndFunction
+; /71753
+
+State Empty
+    Event OnEquipped(Actor akActor)
+        Debug.Trace("MS12: Player equipped white phial.")
+        (GetOwningQuest() as MS12PostQuestScript).Realign()
+    EndEvent
+EndState
