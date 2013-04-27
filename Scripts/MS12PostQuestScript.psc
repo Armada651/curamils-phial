@@ -40,20 +40,14 @@ Function SetReward(string rewardType)
 	
 	Actor player = Game.GetPlayer()
 	
-	; remove the current phial and any empty duplicates
+	; remove the current phial
 	player.RemoveItem(PhialAlias.GetReference(), 1, true)
-	player.RemoveItem(EmptyPhial, Game.GetPlayer().GetItemCount(EmptyPhial), true)
 	
-	ObjectReference rep = player.PlaceAtMe(EmptyPhial, 1)
-	PhialAlias.ForceRefTo(rep)
-	player.AddItem(rep)
-	
-	; set the refill timer
+	; clear the alignment and set the refill timer
     MS12WhitePhialScript phial = (PhialAlias as MS12WhitePhialScript)
-	RegisterForSingleUpdateGameTime(phial.RefillTime)
+    phial.Alignment = none
+	phial.SetForRefill(player)
 	MS12AlignedMessage.Show()
-    
-    phial.GoToState("Empty")
 EndFunction
 
 Event OnUpdateGameTime()
