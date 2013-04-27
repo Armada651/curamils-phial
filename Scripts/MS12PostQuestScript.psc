@@ -13,13 +13,12 @@ Potion Property ImproveDamagePotion auto
 Potion Property ImproveSneakPotion auto
 
 Message Property MS12RefillMessage auto
-Message Property MS12RealignMessage auto
+Message Property MS12AlignMessageBox auto
 Message Property MS12AlignedMessage auto
 Message Property MS12AlignMessage auto
 
 ReferenceAlias Property PhialAlias auto
-
-bool Property Realign = false auto
+ReferenceAlias Property PlayerAlias auto
 
 Function SetReward(string rewardType)
 ; 	Debug.Trace("MS12: Setting reward to " + rewardType)
@@ -39,12 +38,19 @@ Function SetReward(string rewardType)
 ; 		Debug.Trace("MS12: Trying to align phial to unknown type.", 2)
 	endif
 	
-	Game.GetPlayer().RemoveItem(PhialAlias.GetReference(), 1)
+	Actor player = Game.GetPlayer()
 	
-	ObjectReference rep = Game.GetPlayer().PlaceAtMe(Replicated, 1)
+	; remove the current phial and any empty duplicates
+	player.RemoveItem(PhialAlias.GetReference(), 1, true)
+	player.RemoveItem(EmptyPhial, Game.GetPlayer().GetItemCount(EmptyPhial), true)
+	
+	ObjectReference rep = player.PlaceAtMe(EmptyPhial, 1)
 	PhialAlias.ForceRefTo(rep)
-
-	Game.GetPlayer().AddItem(rep)
+	player.AddItem(rep)
+	
+	; set the refill timer
+	RegisterForSingleUpdateGameTime((PhialAlias as MS12WhitePhialScript).RefillTime)
+	MS12AlignedMessage.Show()
 EndFunction
 
 Event OnUpdateGameTime()
@@ -53,17 +59,18 @@ EndEvent
 
 Function RewardCheck(bool quiet = false)
 ; 	Debug.Trace("MS12: White phial attempting to refill...")
-	if (!quiet && Game.GetPlayer().GetItemCount(EmptyPhial) > 0)
-		MS12RefillMessage.Show()
+	if (Replicated)
+		if (!quiet && Game.GetPlayer().GetItemCount(EmptyPhial) > 0)
+			MS12RefillMessage.Show()
+		endif
+		(PlayerAlias as MS12PostPlayerScript).GoToState("")
+		(PhialAlias as MS12WhitePhialScript).Refill(Replicated)
 	endif
-	Realign = false
-	(PhialAlias as MS12WhitePhialScript).Refill(Replicated)
 EndFunction
 
 Function SetCustomAlignment(Potion alignPotion)
+	(PlayerAlias as MS12PostPlayerScript).GoToState("")
 	Replicated = CustomPhial
-	Realign = false
-	
 	MS12WhitePhialScript phial = (PhialAlias as MS12WhitePhialScript)
 	phial.Alignment = alignPotion
 	RegisterForSingleUpdateGameTime(phial.RefillTime)
@@ -71,10 +78,12 @@ Function SetCustomAlignment(Potion alignPotion)
 EndFunction
 
 Function Realign()
-	if (MS12RealignMessage.Show() == 0)
-		Realign = true
-		MS12AlignMessage.Show()
-	else
-		Realign = false
+	if (Replicated)
+		if (MS12AlignMessageBox.Show() == 0)
+			UnregisterForUpdateGameTime()
+			Replicated = none
+			(PlayerAlias as MS12PostPlayerScript).GoToState("Align")
+			MS12AlignMessage.Show()
+		endif
 	endif
 EndFunction
