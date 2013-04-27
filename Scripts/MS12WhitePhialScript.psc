@@ -73,6 +73,7 @@ Event OnEquipped(Actor akActor)
 		; if the phial has a custom alignment
 		if (me.GetBaseObject() == CustomPhial)
 			akActor.AddItem(Alignment, 1, true)
+			Game.IncrementStat("Potions Used", -1)
 			akActor.EquipItem(Alignment, false, true)
 		endif
 		
