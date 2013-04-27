@@ -72,9 +72,11 @@ Event OnEquipped(Actor akActor)
 	else
 		; if the phial has a custom alignment
 		if (me.GetBaseObject() == CustomPhial)
-			akActor.AddItem(Alignment, 1, true)
 			Game.IncrementStat("Potions Used", -1)
+			int count = akActor.GetItemCount(Alignment)
 			akActor.EquipItem(Alignment, false, true)
+			int delta = count - akActor.GetItemCount(Alignment)
+			akActor.AddItem(Alignment, delta, true)
 		endif
 		
 		; add the empty phial and set the refill timer
