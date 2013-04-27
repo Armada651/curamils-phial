@@ -13,7 +13,7 @@ Potion Property ImproveDamagePotion auto
 Potion Property ImproveSneakPotion auto
 
 Message Property MS12RefillMessage auto
-Message Property MS12AlignMessageBox auto
+Message Property MS12RealignMessage auto
 Message Property MS12AlignedMessage auto
 Message Property MS12AlignMessage auto
 
@@ -22,7 +22,7 @@ ReferenceAlias Property PlayerAlias auto
 
 Function SetReward(string rewardType)
 ; 	Debug.Trace("MS12: Setting reward to " + rewardType)
-	if     (rewardType == "heal")
+	if	 (rewardType == "heal")
 		Replicated = HealPotion
 	elseif (rewardType == "resist magic")		
 		Replicated = ResistMagicPotion
@@ -79,11 +79,13 @@ EndFunction
 
 Function Realign()
 	if (Replicated)
-		if (MS12AlignMessageBox.Show() == 0)
-			UnregisterForUpdateGameTime()
-			Replicated = none
-			(PlayerAlias as MS12PostPlayerScript).GoToState("Align")
-			MS12AlignMessage.Show()
+		if (MS12RealignMessage.Show() == 1)
+			return
 		endif
 	endif
+	
+	UnregisterForUpdateGameTime()
+	Replicated = none
+	(PlayerAlias as MS12PostPlayerScript).GoToState("Align")
+	MS12AlignMessage.Show()
 EndFunction
