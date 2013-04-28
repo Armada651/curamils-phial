@@ -18,8 +18,18 @@ Message Property MS12AlignedMessage auto
 Message Property MS12AlignMessage auto
 
 ReferenceAlias Property PhialAlias auto
+ReferenceAlias Property PlayerAlias auto
 
-bool Property Realign = false auto
+int Property PoisonsUsed auto
+int Property PotionsUsed auto
+
+Event OnInit()
+	; if the quest is running but there is no phial in the game
+	if (IsRunning() && !PhialAlias.GetReference())
+		; try to quietly fix it
+		RewardCheck(true)
+	endif
+EndEvent
 
 Function SetReward(string rewardType)
 ; 	Debug.Trace("MS12: Setting reward to " + rewardType)
@@ -56,14 +66,12 @@ Function RewardCheck(bool quiet = false)
 	if (!quiet && Game.GetPlayer().GetItemCount(EmptyPhial) > 0)
 		MS12RefillMessage.Show()
 	endif
-	Realign = false
+	(PlayerAlias as MS12PostPlayerScript).GotoState("")
 	(PhialAlias as MS12WhitePhialScript).Refill(Replicated)
 EndFunction
 
 Function SetCustomAlignment(Potion alignPotion)
 	Replicated = CustomPhial
-	Realign = false
-	
 	MS12WhitePhialScript phial = (PhialAlias as MS12WhitePhialScript)
 	phial.Alignment = alignPotion
 	RegisterForSingleUpdateGameTime(phial.RefillTime)
@@ -72,9 +80,11 @@ EndFunction
 
 Function Realign()
 	if (MS12RealignMessage.Show() == 0)
-		Realign = true
+		PoisonsUsed = Game.QueryStat("Poisons Used")
+		PotionsUsed = Game.QueryStat("Potions Used")
+		(PlayerAlias as MS12PostPlayerScript).GotoState("Align")
 		MS12AlignMessage.Show()
 	else
-		Realign = false
+		(PlayerAlias as MS12PostPlayerScript).GotoState("")
 	endif
 EndFunction

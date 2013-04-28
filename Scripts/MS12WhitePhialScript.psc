@@ -64,22 +64,47 @@ EndFunction
 
 Event OnEquipped(Actor akActor)
 ; 	Debug.Trace("MS12: Player drinking white phial.")
+	Debug.Notification("Player drinking white phial.")
 	ObjectReference me = GetReference()
+	MS12PostQuestScript owner = GetOwningQuest() as MS12PostQuestScript
 	
-	; check if phial is empty
+	; if phial is empty realign it
 	if (me.GetBaseObject() == EmptyPhial)
-		(GetOwningQuest() as MS12PostQuestScript).Realign()
-	else
-		; if the phial has a custom alignment
-		if (me.GetBaseObject() == CustomPhial)
+		owner.Realign()
+		return
+	endif
+	
+	; if the phial has a custom alignment
+	if (me.GetBaseObject() == CustomPhial)
+		if (Alignment.IsHostile())
+			MS12PostPlayerScript player = owner.PlayerAlias as MS12PostPlayerScript
+			
+			; can't detect if player refuses poison, need to stay in satus quo
+			ObjectReference full = akActor.PlaceAtMe(CustomPhial, 1)
+			ForceRefTo(full)
+			akActor.AddItem(full, 1, true)
+			
+			; check if the player already has the poison, we will have to give one back in that case
+			player.HasPoison = akActor.GetItemCount(Alignment) > 0
+			akActor.AddItem(Alignment, 1, true)
+			akActor.EquipItem(Alignment, false, true)
+			akActor.RemoveItem(Alignment, 1, true)
+			
+			; put the player script in poison state
+			owner.PoisonsUsed = Game.QueryStat("Poisons Used")
+			player.GoToState("Poison")
+			
+			; don't handle the rest, the phial will be emptied later
+			return
+		else
 			akActor.AddItem(Alignment, 1, true)
 			akActor.EquipItem(Alignment, false, true)
 		endif
-		
-		; add the empty phial and set the refill timer
-		ObjectReference empty = akActor.PlaceAtMe(EmptyPhial, 1)
-		ForceRefTo(empty)
-		akActor.AddItem(empty, 1, true)
-		GetOwningQuest().RegisterForSingleUpdateGameTime(RefillTime)
 	endif
+	
+	; add the empty phial and set the refill timer
+	ObjectReference empty = akActor.PlaceAtMe(EmptyPhial, 1)
+	ForceRefTo(empty)
+	akActor.AddItem(empty, 1, true)
+	owner.RegisterForSingleUpdateGameTime(RefillTime)
 EndEvent
