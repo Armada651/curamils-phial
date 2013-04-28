@@ -9,6 +9,8 @@ ObjectReference Property SpawnMarker auto
 
 Potion Property Alignment auto
 
+ReferenceAlias Property AlignPotion auto
+
 ; track where we are
 Event OnContainerChanged(ObjectReference akNewContainer, ObjectReference akOldContainer)
 ; 	Debug.Trace("MS12: White phial changing hands; now in " + akNewContainer)
@@ -72,7 +74,9 @@ Event OnEquipped(Actor akActor)
 	else
 		; if the phial has a custom alignment
 		if (me.GetBaseObject() == CustomPhial)
-			akActor.AddItem(Alignment, 1, true)
+			ObjectReference align = akActor.PlaceAtMe(Alignment, 1)
+			akActor.AddItem(align, 1, true)
+			(AlignPotion as MS12PotionScript).ForceRefTo(align)
 			akActor.EquipItem(Alignment, false, true)
 		endif
 		

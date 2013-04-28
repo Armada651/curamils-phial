@@ -20,6 +20,8 @@ Message Property MS12AlignMessage auto
 ReferenceAlias Property PhialAlias auto
 
 bool Property Realign = false auto
+int Property PoisonsUsed auto
+int Property PotionsUsed auto
 
 Function SetReward(string rewardType)
 ; 	Debug.Trace("MS12: Setting reward to " + rewardType)
@@ -73,6 +75,8 @@ EndFunction
 Function Realign()
 	if (MS12RealignMessage.Show() == 0)
 		Realign = true
+		PoisonsUsed = Game.QueryStat("Poisons Used")
+		PotionsUsed = Game.QueryStat("Potions Used")
 		MS12AlignMessage.Show()
 	else
 		Realign = false
