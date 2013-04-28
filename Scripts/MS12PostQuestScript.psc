@@ -22,7 +22,7 @@ ReferenceAlias Property PlayerAlias auto
 
 Function SetReward(string rewardType)
 ; 	Debug.Trace("MS12: Setting reward to " + rewardType)
-	if	 (rewardType == "heal")
+	if     (rewardType == "heal")
 		Replicated = HealPotion
 	elseif (rewardType == "resist magic")		
 		Replicated = ResistMagicPotion
@@ -34,6 +34,8 @@ Function SetReward(string rewardType)
 		Replicated = ImproveDamagePotion
 	elseif (rewardType == "improve sneak")		
 		Replicated = ImproveSneakPotion
+	elseif (rewardType == "empty")		
+		Replicated = none
 	else
 ; 		Debug.Trace("MS12: Trying to align phial to unknown type.", 2)
 	endif
@@ -44,13 +46,15 @@ Function SetReward(string rewardType)
 	player.RemoveItem(PhialAlias.GetReference(), 1, true)
 	player.RemoveItem(EmptyPhial, Game.GetPlayer().GetItemCount(EmptyPhial), true)
 	
-	ObjectReference rep = player.PlaceAtMe(EmptyPhial, 1)
+	ObjectReference rep
+	if (Replicated)
+		rep = player.PlaceAtMe(Replicated, 1)
+	else
+		rep = player.PlaceAtMe(EmptyPhial, 1)
+	endif
+	
 	PhialAlias.ForceRefTo(rep)
 	player.AddItem(rep)
-	
-	; set the refill timer
-	RegisterForSingleUpdateGameTime((PhialAlias as MS12WhitePhialScript).RefillTime)
-	MS12AlignedMessage.Show()
 EndFunction
 
 Event OnUpdateGameTime()
@@ -78,14 +82,10 @@ Function SetCustomAlignment(Potion alignPotion)
 EndFunction
 
 Function Realign()
-	if (Replicated)
-		if (MS12RealignMessage.Show() == 1)
-			return
-		endif
+	if (MS12RealignMessage.Show() == 0)
+		(PlayerAlias as MS12PostPlayerScript).GoToState("Align")
+		MS12AlignMessage.Show()
+	else
+		(PlayerAlias as MS12PostPlayerScript).GoToState("")
 	endif
-	
-	UnregisterForUpdateGameTime()
-	Replicated = none
-	(PlayerAlias as MS12PostPlayerScript).GoToState("Align")
-	MS12AlignMessage.Show()
 EndFunction
